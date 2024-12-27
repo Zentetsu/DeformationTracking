@@ -1,0 +1,7 @@
+include = ["API.toml", "**/*.py", "**/*.py"]
+
+line-length = 300
+select = ["ANN", "D"]
+
+[lint]
+ignore = ["E501", "ANN101"]

@@ -1,0 +1,26 @@
+BasedOnStyle: Google
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ColumnLimit: 300
+
+IdentifierNaming:
+    ClassCase: UpperCamelCase  # Specifies that class names should use UpperCamelCase
+    FunctionCase: lowerCamelCase
+    NamespaceCase: lower_case
+    VariableCase: lowerCamelCase
+    FieldPrefix: d_
+    MemberCase: lowerCamelCase
+    MemberPrefix: m_
+    BooleanCase: lowerCamelCase
+
+BraceWrapping:
+  AfterClass: true           # Place opening brace for classes on a new line
+  AfterControlStatement: true  # Place opening brace for if, for, while, etc., on a new line
+  AfterEnum: true            # Place opening brace for enums on a new line
+  AfterFunction: true        # Place opening brace for functions on a new line
+  AfterNamespace: true       # Place opening brace for namespaces on a new line
+  AfterStruct: true          # Place opening brace for structs on a new line
+  AfterUnion: true           # Place opening brace for unions on a new line
+  BeforeCatch: true          # Ensure `catch` braces align in Allman style
+  BeforeElse: true           # Ensure `else` braces align in Allman style
