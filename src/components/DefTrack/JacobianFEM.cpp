@@ -17,7 +17,7 @@ vpMatrix v;
 vpColVector W;
 
 void log(std::string text) {
-    std::ofstream newFile("/home/agniv/Code/registration_iProcess/SOFA_dataset/cube_fem/output/log.txt", std::ios_base::app);
+    std::ofstream newFile("/home/zentetsu/Documents/output/log.txt", std::ios_base::app);
     newFile << text << std::endl;
     newFile.close();
 }
@@ -85,8 +85,7 @@ pcl::PointXYZ normal_estimation(pcl::PointXYZ &a, pcl::PointXYZ &b, pcl::PointXY
     pcl::PointXYZ B_;
     pcl::PointXYZ out_vec;
 
-    // log(std::to_string(a.x)+" "+std::to_string(a.y)+" "+std::to_string(a.z)+" "+std::to_string(b.x)+" "+std::to_string(b.y)+" "+std::to_string(b.z)+" "+std::to_string(c.x)+" "+std::to_string(c.y)+"
-    // "+std::to_string(c.z));
+    // log(std::to_string(a.x)+" "+std::to_string(a.y)+" "+std::to_string(a.z)+" "+std::to_string(b.x)+" "+std::to_string(b.y)+" "+std::to_string(b.z)+" "+std::to_string(c.x)+" "+std::to_string(c.y)+" "+std::to_string(c.z));
 
     if (are_points_same(a, b) || are_points_same(b, c) || are_points_same(a, c)) {
         // cout<<"degenerate Triangle"<<std::endl;
@@ -200,27 +199,18 @@ Eigen::MatrixXd assign_weights_to_matrix(Eigen::MatrixXd &residual) {
 }
 
 void assign_weights_to_matrix_visp(Eigen::MatrixXd &residual, vpColVector &W) {
-    std::cout << "C++: " << "assign_weights_to_matrix_visp" << std::endl;
     vpColVector error(residual.rows());
     // W.resize(residual.rows(),residual.rows(),true);
 
-    std::cout << "C++: " << "debug 1" << std::endl;
     for (int i = 0; i < residual.rows(); i++) {
         error[i] = residual(i, 0);
     }
 
-    std::cout << "C++: " << "debug 2" << std::endl;
     vpRobust robust;
 
-    std::cout << "C++: " << "debug 3" << std::endl;
     robust.resize(error.size());
-    std::cout << "C++: " << "debug 3.1" << std::endl;
     robust.setThreshold(0.1f);
-    std::cout << "C++: " << "debug 3.2" << std::endl;
-    std::cout << "C++: " << "ERROR: " << error.size() << std::endl;
-    std::cout << "C++: " << "W: " << W.size() << std::endl;
     robust.MEstimator(vpRobust::TUKEY, error, W);  // it is also possible to use 'vpRobust::HUBER'
-    std::cout << "C++: " << "debug 4" << std::endl;
 }
 
 Eigen::MatrixXd get_residual(pcl::PolygonMesh &poly_mesh, pcl::PointCloud<pcl::PointXYZ>::Ptr &pcl_cloud, Eigen::Matrix4f &transform, bool is_first, std::string file_name, mesh_map mesh, int iteration) {
@@ -422,28 +412,20 @@ Eigen::MatrixXd get_residual(pcl::PolygonMesh &poly_mesh, pcl::PointCloud<pcl::P
 // }
 
 void gauss_newton_visp(Eigen::MatrixXd &residual, Eigen::MatrixXd &J, Eigen::MatrixXd &update, int iteration) {
-    std::cout << "C++: " << "gauss_newton_visp" << std::endl;
     W.resize(residual.rows(), false);
-    std::cout << "C++: " << "debug 0.1" << std::endl;
     assign_weights_to_matrix_visp(residual, W);
-    std::cout << "C++: " << "residual rows: " << residual.rows() << std::endl;
-    // std::cout << "C++: " << "W: " << W << std::endl;
-    std::cout << "C++: " << "debug 1" << std::endl;
 
     for (int i = 0; i < residual.rows(); i++) {
         residual(i, 0) *= W[i];
     }
 
-    std::cout << "C++: " << "debug 2" << std::endl;
     ocl.eigen_to_visp(residual, R);
     ocl.eigen_to_visp(J, J_);
 
-    std::cout << "C++: " << "debug 3" << std::endl;
     AtWA = (J_.transpose() * J_);
 
     lm.eye(AtWA.getRows(), AtWA.getCols());
 
-    std::cout << "C++: " << "debug 4" << std::endl;
     float lambda = 10.0f;
 
     if (iteration > 2) {
@@ -456,14 +438,11 @@ void gauss_newton_visp(Eigen::MatrixXd &residual, Eigen::MatrixXd &J, Eigen::Mat
 
     v = -0.001 * (AtWA.pseudoInverse(AtWA.getRows() * std::numeric_limits<double>::epsilon())) * J_.transpose() * R;
 
-    std::cout << "C++: " << "debug 5" << std::endl;
     update.resize(v.getRows(), 1);
 
     for (int i = 0; i < v.getRows(); i++) {
         update(i, 0) = v[i][0];
     }
-    std::cout << "C++: " << "debug 6" << std::endl;
-    std::cout << "C++: " << "END gauss_newton_visp" << std::endl;
 }
 
 void gauss_newton_visp_unweighted(Eigen::MatrixXd &residual, Eigen::MatrixXd &J, Eigen::MatrixXd &update, int iteration) {
@@ -515,12 +494,10 @@ double get_mean_of_col(Eigen::MatrixXd M, int col_num) {
 }
 
 double compute_jacobian(int num_forces, pcl::PolygonMesh &visible_points, pcl::PointCloud<pcl::PointXYZ>::Ptr &pcl_cloud, Eigen::Matrix4f &transform, mesh_map &mesh, vector<PolygonMesh> &deformed_models, Eigen::MatrixXd &update, int iteration, int pcd_count) {
-    std::cout << "C++: " << "compute_jacobian" << std::endl;
     pcl::PointCloud<pcl::PointXYZ>::Ptr vertices_visible(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::fromPCLPointCloud2(visible_points.cloud, *vertices_visible);           // EXTRACTING VISIBLE VERTICES FROM VISIBLE MESH
     pcl::transformPointCloud(*vertices_visible, *vertices_visible, transform);  // transforming those vertices //NOTE::this is redundant transformation
 
-    std::cout << "C++: " << "debug 1" << std::endl;
     // cout<<"visible size: "<<visible_points.cloud.width<<endl;
 
     int jacobian_count = 0;
@@ -532,10 +509,8 @@ double compute_jacobian(int num_forces, pcl::PolygonMesh &visible_points, pcl::P
 
     Eigen::MatrixXd J(res_.rows(), (num_forces));
 
-    std::cout << "C++: " << "debug 2" << std::endl;
     J = Eigen::MatrixXd::Zero((res_.rows()), (num_forces) / 2);
 
-    std::cout << "C++: " << "debug 3" << std::endl;
     for (int i = 0; i < (num_forces / 6); i++) {
         Eigen::MatrixXd j1, j2, j3, j4, j5, j6;
         pcl::PointCloud<pcl::PointXYZ>::Ptr vertices_visible_J(new pcl::PointCloud<pcl::PointXYZ>);
@@ -597,13 +572,10 @@ double compute_jacobian(int num_forces, pcl::PolygonMesh &visible_points, pcl::P
 
     // gauss_newton_eigen_sparse(res_, J, update, iteration);
 
-    std::cout << "C++: " << "debug 4" << std::endl;
     gauss_newton_visp(res_, J, update, iteration);
-    std::cout << "C++: " << "gauss_newton_visp" << std::endl;
 
     // gauss_newton_visp_unweighted(res_, J, update, iteration);
 
-    std::cout << "C++: " << "debug 5" << std::endl;
 #ifdef DEBUG_DUMP
     return get_mean_of_col(res_, 0);
 #else
@@ -631,21 +603,14 @@ void JacobianFEM::set_file_num(int _file_num) { file_num_ = _file_num; }
 // Eigen::Matrix4f &transform : cMo for last frame
 /***************************************/
 double JacobianFEM::compute_update(PointCloud<PointXYZ>::Ptr &pointcloud, PolygonMesh base_model, vector<PolygonMesh> &deformed_models, Eigen::Matrix4f &transform, Eigen::MatrixXd &update) {
-    std::cout << "C++: " << "compute_update" << std::endl;
-    std::cout << "C++: " << "debug 1" << std::endl;
     ocl.transformPolygonMesh(base_model, transform);  //  <----- the transformed model file is here
-    std::cout << "C++: " << "debug 2" << std::endl;
     ocl.set_camera_params(F_x, F_y, C_x, C_y, 0.0f, 0.0f, 0.0f, 0.0f);
-    std::cout << "C++: " << "debug 3" << std::endl;
     pcl::PointCloud<pcl::PointXYZ>::Ptr vertices(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::fromPCLPointCloud2(base_model.cloud, *vertices);  // vertices of the base model
     // cout<<"in here -> width: "<<pointcloud->width<<endl;
-    std::cout << "C++: " << "debug 4" << std::endl;
 
     mesh_map mesh_ = ocl.get_visibility_vtk(base_model);
-    std::cout << "C++: " << "debug 5" << std::endl;
     double residual = compute_jacobian(deformed_models.size(), base_model, pointcloud, transform, mesh_, deformed_models, update, iteration, pcd_count);
     // cout<<"computed J with "<<J.rows()<<" rows"<<endl;
-    std::cout << "C++: " << "debug 6" << std::endl;
     return residual;
 }

@@ -37,44 +37,42 @@
 // // Image utility functions, minimal BMP writer and depth buffer tone mapping
 // ////////////////////////////////////////////////////////////////////////////////////////
 
-// static void WriteBMP(const char* filename, const unsigned char* data, int w, int h) {
-//     short header[] = { 0x4D42, 0, 0, 0, 0, 26, 0, 12, 0, (short)w, (short)h, 1, 24 };
-//     FILE* f = fopen(filename, "wb");
-//     fwrite(header, 1, sizeof(header), f);
-// #if USE_D3D == 1
-//     // Flip image because Y axis of Direct3D points in the opposite direction of bmp. If the library
-//     // is configured for OpenGL (USE_D3D 0) then the Y axes would match and this wouldn't be required.
-//     for (int y = 0; y < h; ++y)
-//         fwrite(&data[(h - y - 1) * w * 3], 1, w * 3, f);
-// #else
-//     fwrite(data, 1, w * h * 3, f);
-// #endif
-//     fclose(f);
-// }
+static void WriteBMP(const char *filename, const unsigned char *data, int w, int h) {
+    short header[] = {0x4D42, 0, 0, 0, 0, 26, 0, 12, 0, (short)w, (short)h, 1, 24};
+    FILE *f = fopen(filename, "wb");
+    fwrite(header, 1, sizeof(header), f);
+#if USE_D3D == 1
+    // Flip image because Y axis of Direct3D points in the opposite direction of bmp. If the library
+    // is configured for OpenGL (USE_D3D 0) then the Y axes would match and this wouldn't be required.
+    for (int y = 0; y < h; ++y) fwrite(&data[(h - y - 1) * w * 3], 1, w * 3, f);
+#else
+    fwrite(data, 1, w * h * 3, f);
+#endif
+    fclose(f);
+}
 
-// static void TonemapDepth(float* depth, unsigned char* image, int w, int h) {
-//     // Find min/max w coordinate (discard cleared pixels)
-//     float minW = FLT_MAX, maxW = 0.0f;
-//     for (int i = 0; i < w * h; ++i) {
-//         if (depth[i] > 0.0f) {
-//             minW = std::min(minW, depth[i]);
-//             maxW = std::max(maxW, depth[i]);
-//         }
-//     }
+static void TonemapDepth(float *depth, unsigned char *image, int w, int h) {
+    // Find min/max w coordinate (discard cleared pixels)
+    float minW = FLT_MAX, maxW = 0.0f;
+    for (int i = 0; i < w * h; ++i) {
+        if (depth[i] > 0.0f) {
+            minW = std::min(minW, depth[i]);
+            maxW = std::max(maxW, depth[i]);
+        }
+    }
 
-//     // Tonemap depth values
-//     for (int i = 0; i < w * h; ++i) {
-//         int intensity = 0;
-//         if (depth[i] > 0)
-//             intensity = (unsigned char)(223.0 * (depth[i] - minW) / (maxW - minW) + 32.0);
+    // Tonemap depth values
+    for (int i = 0; i < w * h; ++i) {
+        int intensity = 0;
+        if (depth[i] > 0) intensity = (unsigned char)(223.0 * (depth[i] - minW) / (maxW - minW) + 32.0);
 
-//         image[i * 3 + 0] = intensity;
-//         image[i * 3 + 1] = intensity;
-//         image[i * 3 + 2] = intensity;
-//     }
-// }
+        image[i * 3 + 0] = intensity;
+        image[i * 3 + 1] = intensity;
+        image[i * 3 + 2] = intensity;
+    }
+}
 
-void OcclusionCheck::eigen_to_visp(MatrixXd& E, vpMatrix& V) {
+void OcclusionCheck::eigen_to_visp(MatrixXd &E, vpMatrix &V) {
     V.resize(E.rows(), E.cols(), true);
     for (int i = 0; i < E.rows(); i++) {
         for (int j = 0; j < E.cols(); j++) {
@@ -83,7 +81,7 @@ void OcclusionCheck::eigen_to_visp(MatrixXd& E, vpMatrix& V) {
     }
 }
 
-void OcclusionCheck::visp_to_eigen(vpMatrix& V, MatrixXd& E) {
+void OcclusionCheck::visp_to_eigen(vpMatrix &V, MatrixXd &E) {
     E.resize(V.getRows(), V.getCols());
 
     for (int i = 0; i < V.getRows(); i++) {
@@ -92,9 +90,8 @@ void OcclusionCheck::visp_to_eigen(vpMatrix& V, MatrixXd& E) {
         }
     }
 }
-
-double** OcclusionCheck::load_pose(char* path) {
-    double** transform = new double*[4];
+double **OcclusionCheck::load_pose(char *path) {
+    double **transform = new double *[4];
 
     std::ifstream file(path);
     for (unsigned int i = 0; i < 4; i++) {
@@ -103,11 +100,11 @@ double** OcclusionCheck::load_pose(char* path) {
             file >> transform[i][j];
         }
     }
-
     return transform;
 }
 
-void OcclusionCheck::eigen_to_visp_4x4(Matrix4f E, vpHomogeneousMatrix& V) {  // this is specific to blender simulated data
+void OcclusionCheck::eigen_to_visp_4x4(Matrix4f E, vpHomogeneousMatrix &V)  // this is specific to blender simulated data
+{
     V[0][0] = E(0, 0);
     V[0][1] = E(0, 1);
     V[0][2] = E(0, 2);
@@ -126,7 +123,7 @@ void OcclusionCheck::eigen_to_visp_4x4(Matrix4f E, vpHomogeneousMatrix& V) {  //
     V[3][3] = E(3, 3);
 }
 
-void OcclusionCheck::visp_to_eigen_4x4(vpHomogeneousMatrix V, Matrix4f& E) {
+void OcclusionCheck::visp_to_eigen_4x4(vpHomogeneousMatrix V, Matrix4f &E) {
     E(0, 0) = V[0][0];
     E(0, 1) = V[0][1];
     E(0, 2) = V[0][2];
@@ -145,13 +142,13 @@ void OcclusionCheck::visp_to_eigen_4x4(vpHomogeneousMatrix V, Matrix4f& E) {
     E(3, 3) = V[3][3];
 }
 
-void OcclusionCheck::load_pcd(pcl::PointCloud<pcl::PointXYZ>& cloud, std::string path) {
+void OcclusionCheck::load_pcd(pcl::PointCloud<pcl::PointXYZ> &cloud, std::string path) {
     if (pcl::io::loadPCDFile<pcl::PointXYZ>(path, cloud) == -1) {
         (PCL_ERROR("Couldn't read file pcd"));
     }
 }
 
-void OcclusionCheck::transformPolygonMesh(pcl::PolygonMesh& inMesh, Eigen::Matrix4f& transform) {
+void OcclusionCheck::transformPolygonMesh(pcl::PolygonMesh &inMesh, Eigen::Matrix4f &transform) {
     // Important part starts here
     pcl::PointCloud<pcl::PointXYZ> cloud;
     pcl::fromPCLPointCloud2(inMesh.cloud, cloud);
@@ -204,7 +201,7 @@ vector<Eigen::Vector3d> OcclusionCheck::nearest_neighbor(PointCloud<PointXYZ> cl
     return normals;
 }
 
-MatrixXd OcclusionCheck::nearest_neighbor_list(PointCloud<PointXYZ>& cloud_, PointCloud<PointXYZ>::Ptr cluster, float dist) {
+MatrixXd OcclusionCheck::nearest_neighbor_list(PointCloud<PointXYZ> &cloud_, PointCloud<PointXYZ>::Ptr cluster, float dist) {
     PointCloud<PointXYZ>::Ptr cloud(new PointCloud<PointXYZ>);
     *cloud = cloud_;
 
@@ -238,7 +235,7 @@ MatrixXd OcclusionCheck::nearest_neighbor_list(PointCloud<PointXYZ>& cloud_, Poi
     return A;
 }
 
-void OcclusionCheck::load_pcd_as_text_rgbd(pcl::PointCloud<pcl::PointXYZRGB>& cloud, std::string path, bool isStructured) {
+void OcclusionCheck::load_pcd_as_text_rgbd(pcl::PointCloud<pcl::PointXYZRGB> &cloud, std::string path, bool isStructured) {
     std::ifstream file(path.c_str());
     std::vector<double> points;
     vector<uint32_t> rgb_points;
@@ -252,8 +249,8 @@ void OcclusionCheck::load_pcd_as_text_rgbd(pcl::PointCloud<pcl::PointXYZRGB>& cl
                 i++;
                 int j = 0;
                 if (i > 11) {
-                    char* pch;
-                    pch = strtok(const_cast<char*>(line.c_str()), " ");
+                    char *pch;
+                    pch = strtok(const_cast<char *>(line.c_str()), " ");
 
                     while (pch != NULL) {
                         if (j < 3) {
@@ -271,8 +268,7 @@ void OcclusionCheck::load_pcd_as_text_rgbd(pcl::PointCloud<pcl::PointXYZRGB>& cl
         } else {
             std::cerr << "Failed to open: " << path << std::endl;
         }
-
-    } catch (const char* exception) {
+    } catch (const char *exception) {
         std::cerr << exception << std::endl;
         std::cerr << "ERROR: The pointcloud from " << path << " did not finish loading properly." << std::endl;
     }
@@ -374,7 +370,7 @@ void OcclusionCheck::set_camera_params(float F_x, float F_y, float C_x, float C_
     AP.at<double>(2, 2) = 1;
 }
 
-point_2d OcclusionCheck::projection(pcl::PointXYZ& pt) {
+point_2d OcclusionCheck::projection(pcl::PointXYZ &pt) {
     pP.x = pt.x;
     pP.y = pt.y;
     pP.z = pt.z;
@@ -391,9 +387,9 @@ point_2d OcclusionCheck::projection(pcl::PointXYZ& pt) {
     return pt_P;
 }
 
-float sign(point_2d& p1, point_2d& p2, point_2d& p3) { return (p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y); }
+float sign(point_2d &p1, point_2d &p2, point_2d &p3) { return (p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y); }
 
-bool OcclusionCheck::point_in_triangle(point_2d& pt, point_2d& v1, point_2d& v2, point_2d& v3) {
+bool OcclusionCheck::point_in_triangle(point_2d &pt, point_2d &v1, point_2d &v2, point_2d &v3) {
     ////log("^");
     bool b1, b2, b3;
 
@@ -654,7 +650,8 @@ point_2d OcclusionCheck::projection_gl(pcl::PointXYZ pt, float F_x, float F_y, f
 //
 //}
 
-PointCloud<PointXYZ>::Ptr OcclusionCheck::load_vtk_mesh(string filename) {  /// process this file now : 17:15 on 29 Octobre
+PointCloud<PointXYZ>::Ptr OcclusionCheck::load_vtk_mesh(string filename)  /// process this file now : 17:15 on 29 Octobre
+{
     // read all the data from the file
     vtkSmartPointer<vtkXMLUnstructuredGridReader> reader = vtkSmartPointer<vtkXMLUnstructuredGridReader>::New();
     reader->SetFileName(filename.c_str());
@@ -687,7 +684,7 @@ PointCloud<PointXYZ>::Ptr OcclusionCheck::load_vtk_mesh(string filename) {  /// 
     float z_min = 1000.0f;
 
     for (int j = 0; j < dataArray->GetNumberOfTuples(); j++) {
-        double* value = dataArray->GetTuple(j);
+        double *value = dataArray->GetTuple(j);
         mech_cloud->points[j].x = value[0];
         mech_cloud->points[j].y = value[1];
         mech_cloud->points[j].z = value[2];
@@ -707,10 +704,10 @@ PointCloud<PointXYZ>::Ptr OcclusionCheck::load_vtk_mesh(string filename) {  /// 
     return mech_cloud;
 }
 
-void OcclusionCheck::get_transform(const string& path, Matrix4f& pose) {
-    char* cstr = new char[path.length() + 1];
+void OcclusionCheck::get_transform(const string &path, Matrix4f &pose) {
+    char *cstr = new char[path.length() + 1];
     strcpy(cstr, path.c_str());
-    double** transform = load_pose(cstr);
+    double **transform = load_pose(cstr);
 
     pose = Eigen::Matrix4f::Identity();
     pose(0, 0) = transform[0][0];
@@ -732,7 +729,6 @@ void OcclusionCheck::get_transform(const string& path, Matrix4f& pose) {
 }
 
 mesh_map OcclusionCheck::get_visibility_vtk(pcl::PolygonMesh mesh) {
-    std::cout << "C++: " << "Visibility testing started" << std::endl;
     mesh_map map_;
 
     // std::string ply_filename1("/home/agniv/Code/registration_iProcess/scripts/SOFA_minimization/build/mesh_init.ply");
@@ -749,14 +745,11 @@ mesh_map OcclusionCheck::get_visibility_vtk(pcl::PolygonMesh mesh) {
 
     int count = 0;
 
-    std::cout << "C++: " << "debug 1" << std::endl;
     pcl::PointCloud<pcl::PointXYZ>::Ptr vertices_visible(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::fromPCLPointCloud2(mesh.cloud, *vertices_visible);
 
-    std::cout << "C++: " << "debug 2" << std::endl;
     std::vector<pcl::Vertices, std::allocator<pcl::Vertices>>::iterator face;
     for (face = mesh.polygons.begin(); face != mesh.polygons.end(); ++face) {
-        // cout << "face: " << face->vertices[0] << " " << face->vertices[1] << " " << face->vertices[2] << endl;
         unsigned int v1 = face->vertices[0];
         unsigned int v2 = face->vertices[1];
         unsigned int v3 = face->vertices[2];
@@ -780,34 +773,26 @@ mesh_map OcclusionCheck::get_visibility_vtk(pcl::PolygonMesh mesh) {
         polygons->InsertNextCell(polygon);
     }
 
-    std::cout << "C++: " << "debug 3" << std::endl;
     // Initialize the representation
     vtkSmartPointer<vtkPolyData> polydata = vtkSmartPointer<vtkPolyData>::New();
     polydata->SetPoints(points);
     polydata->SetPolys(polygons);
     // obbTree->GenerateRepresentation(0, polydata);
 
-    std::cout << "C++: " << "debug 4" << std::endl;
     // Create the tree
-    std::cout << "C++: " << "debug 4.1" << std::endl;
     vtkSmartPointer<vtkOBBTree> obbTree = vtkSmartPointer<vtkOBBTree>::New();
-    std::cout << "C++: " << "debug 4.2" << std::endl;
     obbTree->SetDataSet(polydata);
-    std::cout << "C++: " << "debug 4.3" << std::endl;
     obbTree->BuildLocator();
-    std::cout << "C++: " << "debug 4.4" << std::endl;
 
     double lineP0[3] = {0.0, 0.0, 0.0};
     float thresh = 0.01f;
 
-    std::cout << "C++: " << "debug 5" << std::endl;
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
     std::vector<pcl::Vertices> polys;
     pcl::PolygonMesh mesh_vis;
     int vis_count = 0;
 
     for (face = mesh.polygons.begin(); face != mesh.polygons.end(); ++face) {
-        // cout << "face: " << face->vertices[0] << " " << face->vertices[1] << " " << face->vertices[2] << endl;
         int visible = 0;
         std::vector<unsigned int> ids;
 
@@ -846,7 +831,6 @@ mesh_map OcclusionCheck::get_visibility_vtk(pcl::PolygonMesh mesh) {
         }
     }
 
-    std::cout << "C++: " << "debug 6" << std::endl;
     mesh_vis.polygons = polys;
     pcl::PCLPointCloud2::Ptr visible_blob(new pcl::PCLPointCloud2);
     pcl::toPCLPointCloud2(*cloud, *visible_blob);
@@ -855,10 +839,8 @@ mesh_map OcclusionCheck::get_visibility_vtk(pcl::PolygonMesh mesh) {
 
     map_.mesh = mesh_vis;
 
-    std::cout << "C++: " << "debug 7" << std::endl;
     // std::string ply_filename("/home/agniv/Code/registration_iProcess/scripts/SOFA_minimization/build/mesh3.ply");
     // pcl::io::savePLYFile(ply_filename, mesh_vis);
 
-    std::cout << "C++: " << "END: Visibility testing started" << std::endl;
     return map_;
 }

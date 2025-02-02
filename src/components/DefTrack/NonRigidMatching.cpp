@@ -134,15 +134,14 @@ int get_nearest_node(Vector4f centroid, PointCloud<PointXYZ>::Ptr points) {
     int return_index = -1;
 
     if (kdtree.nearestKSearch(p, K, pointIdxNKNSearch, pointNKNSquaredDistance) > 0) {
-        // cout<<"Index of force: "<<pointIdxNKNSearch[0]<<", and coordinates are:
-        // ("<<points->points[pointIdxNKNSearch[0]].x<<","<<points->points[pointIdxNKNSearch[0]].y<<","<<points->points[pointIdxNKNSearch[0]].z<<")"<<endl;
+        // cout<<"Index of force: "<<pointIdxNKNSearch[0]<<", and coordinates are: ("<<points->points[pointIdxNKNSearch[0]].x<<","<<points->points[pointIdxNKNSearch[0]].y<<","<<points->points[pointIdxNKNSearch[0]].z<<")"<<endl;
         return_index = pointIdxNKNSearch[0];
     }
 
     return return_index;
 }
 
-void debug_polygon(PointXYZ p, PointXYZ q, pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud, std::vector<pcl::Vertices>& polys, int& vis_c) {
+void debug_polygon(PointXYZ p, PointXYZ q, pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud, std::vector<pcl::Vertices> &polys, int &vis_c) {
     PointXYZ p1;
     PointXYZ p2;
     PointXYZ p3;
@@ -174,7 +173,7 @@ void debug_polygon(PointXYZ p, PointXYZ q, pcl::PointCloud<pcl::PointXYZ>::Ptr& 
 }
 
 // #ifdef DEBUG_DUMP
-void NonRigidMatching::log_output(PolygonMesh& model, int frame_num, vpHomogeneousMatrix& cMo, double residual, string data_path, string opfilepath) {
+void NonRigidMatching::log_output(PolygonMesh &model, int frame_num, vpHomogeneousMatrix &cMo, double residual, string data_path, string opfilepath) {
     try {
         // STEP 1:
         pcl::io::savePLYFileBinary(opfilepath + "cpp_model/" + to_string(frame_num) + ".ply", model);
@@ -196,7 +195,7 @@ void NonRigidMatching::log_output(PolygonMesh& model, int frame_num, vpHomogeneo
                 newFile2 << frame_num << "," << residual << "\n";
             }
             newFile2.close();
-        } catch (const std::exception& e) {
+        } catch (const std::exception &e) {
             cerr << e.what() << " , " << "Exiting!" << endl;
             exit(0);
         }
@@ -204,8 +203,7 @@ void NonRigidMatching::log_output(PolygonMesh& model, int frame_num, vpHomogeneo
         // STEP 4:
         std::ofstream outfile;
         outfile.open(opfilepath + "cpp_log.txt", std::ios_base::app);
-        outfile << to_string(frame_num) << " " << "/cpp_model/" + to_string(frame_num) + ".ply" << " " << "/cpp_errmap/" + to_string(frame_num) + ".txt" << " "
-                << "/cpp_cMo/" + to_string(frame_num) + ".txt" << endl;
+        outfile << to_string(frame_num) << " " << "/cpp_model/" + to_string(frame_num) + ".ply" << " " << "/cpp_errmap/" + to_string(frame_num) + ".txt" << " " << "/cpp_cMo/" + to_string(frame_num) + ".txt" << endl;
         outfile.close();
 
         // STEP 5:
@@ -216,8 +214,7 @@ void NonRigidMatching::log_output(PolygonMesh& model, int frame_num, vpHomogeneo
         string dt = ctime(&now);
         addnl_path << "Timestamp: " << dt << endl;
         addnl_path.close();
-
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         // this executes if f() throws std::logic_error (base class rule)
         cerr << e.what() << " , " << "Exiting!" << endl;
         exit(0);
@@ -248,7 +245,7 @@ ModelCoefficients::Ptr get_plane_equation(PointXYZRGBA point_a, PointXYZRGBA poi
     return plane;
 }
 
-PointXYZ transformed_point(const PointXYZ p, Matrix4f& transform) {
+PointXYZ transformed_point(const PointXYZ p, Matrix4f &transform) {
     PointXYZ p_;
     Vector3f origin_point;
     origin_point << p.x, p.y, p.z;
@@ -352,7 +349,7 @@ void process_normal(vector<vector<Vector3d>> normal, vector<int> rejection_list)
     }
 }
 
-bool check_sanity(PointCloud<PointXYZ>::Ptr& cloud) {
+bool check_sanity(PointCloud<PointXYZ>::Ptr &cloud) {
     int count_null = 0;
 
     for (int i = 0; i < cloud->size(); i++) {
@@ -372,7 +369,7 @@ bool check_sanity(PointCloud<PointXYZ>::Ptr& cloud) {
     }
 }
 
-vector<int> post_process_cluster(vector<PointCloud<PointXYZ>::Ptr>& clusters) {
+vector<int> post_process_cluster(vector<PointCloud<PointXYZ>::Ptr> &clusters) {
     cout << "post processing clusters" << endl;
     vector<int> size_of_clusters;
     vector<int> reject_index;
@@ -405,7 +402,7 @@ vector<int> post_process_cluster(vector<PointCloud<PointXYZ>::Ptr>& clusters) {
     return reject_index;
 }
 
-vector<PointCloud<PointXYZ>::Ptr> eucledian_cluster(PointCloud<PointXYZ>::Ptr& cloud, vector<Vector3d>& normals) {
+vector<PointCloud<PointXYZ>::Ptr> eucledian_cluster(PointCloud<PointXYZ>::Ptr &cloud, vector<Vector3d> &normals) {
     cout << "start..." << endl;
     search::KdTree<PointXYZ>::Ptr tree(new search::KdTree<PointXYZ>);
     tree->setInputCloud(cloud);
@@ -459,7 +456,7 @@ vector<PointCloud<PointXYZ>::Ptr> eucledian_cluster(PointCloud<PointXYZ>::Ptr& c
     return cluster_list;
 }
 
-bool check_if_already_exists(vector<int>& indices, int index) {
+bool check_if_already_exists(vector<int> &indices, int index) {
     bool ret_flag = false;
     for (int i = 0; i < indices.size(); i++) {
         if (indices[i] == index) {
@@ -470,7 +467,7 @@ bool check_if_already_exists(vector<int>& indices, int index) {
     return ret_flag;
 }
 
-vector<PointXYZ> nearest_neighbor_search(vector<vpColVector> source, PointCloud<PointXYZ>::Ptr target, vector<int>& indices, int index) {
+vector<PointXYZ> nearest_neighbor_search(vector<vpColVector> source, PointCloud<PointXYZ>::Ptr target, vector<int> &indices, int index) {
     vector<PointXYZ> matched_mesh_points;
     //    KdTreeFLANN<PointXYZ> kdtree;
     //    kdtree.setInputCloud (target);
@@ -507,7 +504,7 @@ vector<PointXYZ> nearest_neighbor_search(vector<vpColVector> source, PointCloud<
     return matched_mesh_points;
 }
 
-void cluster_error_map(vector<vpColVector>& err_map, int count, vector<vpColVector>& centroid, vpHomogeneousMatrix& cMo) {
+void cluster_error_map(vector<vpColVector> &err_map, int count, vector<vpColVector> &centroid, vpHomogeneousMatrix &cMo) {
     float max = -1000.0f;
     float min = 1000.0f;
     float x_min, y_min, z_min, x_max, y_max, z_max;
@@ -573,7 +570,7 @@ vector<Vector3d> nearest_neighbor(PointCloud<PointXYZ> cloud_, PointCloud<PointX
     return normals;
 }
 
-void NonRigidMatching::read_frame(PointCloud<PointXYZRGB>::Ptr& frame, int count) {
+void NonRigidMatching::read_frame(PointCloud<PointXYZRGB>::Ptr &frame, int count) {
     cout << data_folder + to_string(count + 1) + ".pcd" << endl;
 
     OcclusionCheck ocl;
@@ -589,7 +586,7 @@ vpMbGenericTracker NonRigidMatching::initialize_rigid_tracking() {
     return tracker;
 }
 
-void NonRigidMatching::initialize(PointCloud<PointXYZRGB>::Ptr& frame_, Matrix4f& transform_init, RigidTracking& rTrack, vpMbGenericTracker& tracker, string config_path, string cao_model_path, vpHomogeneousMatrix& cMo, int pcd_count) {
+void NonRigidMatching::initialize(PointCloud<PointXYZRGB>::Ptr &frame_, Matrix4f &transform_init, RigidTracking &rTrack, vpMbGenericTracker &tracker, string config_path, string cao_model_path, vpHomogeneousMatrix &cMo, int pcd_count) {
     PointCloud<PointXYZRGB>::Ptr frame(new PointCloud<PointXYZRGB>);
     read_frame(frame, pcd_count);
 #ifdef RIGID_TRACKING
@@ -600,7 +597,7 @@ void NonRigidMatching::initialize(PointCloud<PointXYZRGB>::Ptr& frame_, Matrix4f
 }
 
 // status : 0 - 'ready'
-void NonRigidMatching::align_and_cluster(PointCloud<PointXYZRGB>::Ptr& frame, PointCloud<PointXYZ>::Ptr& mechanical_mesh_points, Matrix4f& transform_init, PolygonMesh& model, RigidTracking& rTrack, vpMbGenericTracker& tracker, vector<PointXYZ>& matched_points, vector<int>& indices, int status,
+void NonRigidMatching::align_and_cluster(PointCloud<PointXYZRGB>::Ptr &frame, PointCloud<PointXYZ>::Ptr &mechanical_mesh_points, Matrix4f &transform_init, PolygonMesh &model, RigidTracking &rTrack, vpMbGenericTracker &tracker, vector<PointXYZ> &matched_points, vector<int> &indices, int status,
                                          int count) {
     cout << "good to go for matching" << endl;
     if (status == 0) {
@@ -617,7 +614,7 @@ void NonRigidMatching::align_and_cluster(PointCloud<PointXYZRGB>::Ptr& frame, Po
     }
 }
 
-void NonRigidMatching::format_deformed_polygons(PolygonMesh model, vector<vector<Vec3>> deformed_meshes, vector<PolygonMesh>& formatted_meshes) {
+void NonRigidMatching::format_deformed_polygons(PolygonMesh model, vector<vector<Vec3>> deformed_meshes, vector<PolygonMesh> &formatted_meshes) {
     int size = deformed_meshes[0].size();
 
     for (int i = 0; i < 6; i++) {
@@ -636,7 +633,7 @@ void NonRigidMatching::format_deformed_polygons(PolygonMesh model, vector<vector
     }
 }
 
-void NonRigidMatching::update_polygon(PolygonMesh& model, vector<vector<Vec3>> deformed_mesh) {
+void NonRigidMatching::update_polygon(PolygonMesh &model, vector<vector<Vec3>> deformed_mesh) {
     int size = deformed_mesh[0].size();
 
     PolygonMesh model_ = model;

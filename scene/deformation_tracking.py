@@ -4,7 +4,7 @@ Created Date: Thursday, December 5th 2024, 7:17:00 pm
 
 ----
 
-Last Modified: Wed Dec 18 2024
+Last Modified: Fri Jan 31 2025
 
 ----
 HISTORY:
@@ -198,8 +198,8 @@ class SofaDeform(Sofa.Core.Controller):
                 node_details = self.tracker.forcePoints[i]
                 print("Node forcepoints", self.tracker.forcePoints[i])
                 self.rootNode = self.force.append_nodes(self.rootNode, node_details[0], self.current_node)
-            self.force_nodes.extend([self.current_node])
-            self.current_node = self.current_node  # + 1
+                self.force_nodes.extend([self.current_node])
+                self.current_node = self.current_node  # + 1
             self.tracker.simulationMessage.value = "applying_J"
             self.node_count = len(self.tracker.forcePoints)
             # print("node count: " + str(self.node_count))
@@ -235,6 +235,7 @@ class SofaDeform(Sofa.Core.Controller):
         """Update the deformation tracking process."""
         print("DT update")
         if self.update_stage == 0:
+            print(self.update_stage)
             self.tracker.simulationMessage.value = "applying_update"
             # print 'F^'
             # print 'from Python: need to update force now'
@@ -249,9 +250,11 @@ class SofaDeform(Sofa.Core.Controller):
             )
             self.update_stage = 1
         elif self.update_stage == 1:
+            print(self.update_stage)
             self.update_stage = 2
             # print 'Fv'
         elif self.update_stage == 2:
+            print(self.update_stage)
             (
                 self.rest_velocity,
                 self.obj_position,

@@ -19,10 +19,10 @@
     </sampling_step>
   </depth_dense>
   <camera>
-    <px>383.9700012207</px>
-    <py>383.9700012207</py>
-    <u0>320.5035095215</u0>
-    <v0>235.6029510498</v0>
+    <px>383.4986572265625</px>
+    <py>383.4986572265625</py>
+    <u0>319.76495361328125</u0>
+    <v0>231.63851928710938</v0>
   </camera>
   <face>
     <angle_appear>80</angle_appear>
@@ -32,4 +32,3 @@
     <fov_clipping>1</fov_clipping>
   </face>
 </conf>
-

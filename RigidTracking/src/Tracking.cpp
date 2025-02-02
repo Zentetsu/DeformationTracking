@@ -104,10 +104,14 @@ bool read_data(unsigned int cpt, const std::string &input_directory, vpImage<vpR
         return false;
     }
 
+    std::cout << "Read depth: " << filename_depth << std::endl;
+
     unsigned int height = 0, width = 0;
     vpIoTools::readBinaryValueLE(file_depth, height);
     vpIoTools::readBinaryValueLE(file_depth, width);
     I_depth_raw.resize(height, width);
+
+    std::cout << "Depth image size: " << width << "x" << height << std::endl;
 
     uint16_t depth_value = 0;
     for (unsigned int i = 0; i < height; i++) {
@@ -333,74 +337,74 @@ int main(int argc, char *argv[]) {
     mapOfInitFiles["Camera1"] = init_file;
     tracker.initClick(mapOfImages, mapOfInitFiles, true);
 
-    // mapOfImages.clear();
-    // pcl::PointCloud<pcl::PointXYZ>::Ptr empty_pointcloud(new pcl::PointCloud<pcl::PointXYZ>);
-    // std::vector<double> times_vec;
+    mapOfImages.clear();
+    pcl::PointCloud<pcl::PointXYZ>::Ptr empty_pointcloud(new pcl::PointCloud<pcl::PointXYZ>);
+    std::vector<double> times_vec;
 
-    //     try {
-    //         bool quit = false;
-    //         while (!quit) {
-    //             double t = vpTime::measureTimeMs();
-    //             quit = !read_data(frame_cpt, input_directory, I_color, I_depth_raw, pointcloud);
-    //             vpImageConvert::convert(I_color, I_gray);
-    //             vpImageConvert::createDepthHistogram(I_depth_raw, I_depth);
+        try {
+            bool quit = false;
+            while (!quit) {
+                double t = vpTime::measureTimeMs();
+                quit = !read_data(frame_cpt, input_directory, I_color, I_depth_raw, pointcloud);
+                vpImageConvert::convert(I_color, I_gray);
+                vpImageConvert::createDepthHistogram(I_depth_raw, I_depth);
 
-    //             vpDisplay::display(I_gray);
-    //             vpDisplay::display(I_depth);
+                vpDisplay::display(I_gray);
+                vpDisplay::display(I_depth);
 
-    //             mapOfImages["Camera1"] = &I_gray;
-    //             std::map<std::string, pcl::PointCloud<pcl::PointXYZ>::ConstPtr> mapOfPointclouds;
-    //             if (disable_depth)
-    //                 mapOfPointclouds["Camera2"] = empty_pointcloud;
-    //             else
-    //                 mapOfPointclouds["Camera2"] = pointcloud;
+                mapOfImages["Camera1"] = &I_gray;
+                std::map<std::string, pcl::PointCloud<pcl::PointXYZ>::ConstPtr> mapOfPointclouds;
+                if (disable_depth)
+                    mapOfPointclouds["Camera2"] = empty_pointcloud;
+                else
+                    mapOfPointclouds["Camera2"] = pointcloud;
 
-    //             tracker.track(mapOfImages, mapOfPointclouds);
+                tracker.track(mapOfImages, mapOfPointclouds);
 
-    //             vpHomogeneousMatrix cMo = tracker.getPose();
+                vpHomogeneousMatrix cMo = tracker.getPose();
 
-    //             std::cout << "iter: " << frame_cpt << " cMo:\n" << cMo << std::endl;
+                std::cout << "iter: " << frame_cpt << " cMo:\n" << cMo << std::endl;
 
-    //             tracker.display(I_gray, I_depth, cMo, depth_M_color * cMo, cam_color, cam_depth, vpColor::red, 3);
-    //             vpDisplay::displayFrame(I_gray, cMo, cam_color, 0.05, vpColor::none, 3);
-    //             vpDisplay::displayFrame(I_depth, depth_M_color * cMo, cam_depth, 0.05, vpColor::none, 3);
+                tracker.display(I_gray, I_depth, cMo, depth_M_color * cMo, cam_color, cam_depth, vpColor::red, 3);
+                vpDisplay::displayFrame(I_gray, cMo, cam_color, 0.05, vpColor::none, 3);
+                vpDisplay::displayFrame(I_depth, depth_M_color * cMo, cam_depth, 0.05, vpColor::none, 3);
 
-    //             t = vpTime::measureTimeMs() - t;
-    //             times_vec.push_back(t);
+                t = vpTime::measureTimeMs() - t;
+                times_vec.push_back(t);
 
-    //             std::stringstream ss;
-    //             ss << "Computation time: " << t << " ms";
-    //             vpDisplay::displayText(I_gray, 20, 20, ss.str(), vpColor::red);
-    //             {
-    //                 std::stringstream ss;
-    //                 ss << "Nb features: " << tracker.getError().size();
-    //                 vpDisplay::displayText(I_gray, I_gray.getHeight() - 50, 20, ss.str(), vpColor::red);
-    //             }
-    //             {
-    //                 std::stringstream ss;
-    //                 ss << "Features: edges " << tracker.getNbFeaturesEdge() << ", klt " << tracker.getNbFeaturesKlt() << ", depth " << tracker.getNbFeaturesDepthDense();
-    //                 vpDisplay::displayText(I_gray, I_gray.getHeight() - 30, 20, ss.str(), vpColor::red);
-    //             }
+                std::stringstream ss;
+                ss << "Computation time: " << t << " ms";
+                vpDisplay::displayText(I_gray, 20, 20, ss.str(), vpColor::red);
+                {
+                    std::stringstream ss;
+                    ss << "Nb features: " << tracker.getError().size();
+                    vpDisplay::displayText(I_gray, I_gray.getHeight() - 50, 20, ss.str(), vpColor::red);
+                }
+                {
+                    std::stringstream ss;
+                    ss << "Features: edges " << tracker.getNbFeaturesEdge() << ", klt " << tracker.getNbFeaturesKlt() << ", depth " << tracker.getNbFeaturesDepthDense();
+                    vpDisplay::displayText(I_gray, I_gray.getHeight() - 30, 20, ss.str(), vpColor::red);
+                }
 
-    //             vpDisplay::flush(I_gray);
-    //             vpDisplay::flush(I_depth);
+                vpDisplay::flush(I_gray);
+                vpDisplay::flush(I_depth);
 
-    //             vpMouseButton::vpMouseButtonType button;
-    //             if (vpDisplay::getClick(I_gray, button, false)) {
-    //                 quit = true;
-    //             }
+                vpMouseButton::vpMouseButtonType button;
+                if (vpDisplay::getClick(I_gray, button, false)) {
+                    quit = true;
+                }
 
-    //             frame_cpt++;
-    //         }
-    //     } catch (const vpException &e) {
-    //         std::cout << "Catch exception: " << e.getStringMessage() << std::endl;
-    //     }
+                frame_cpt++;
+            }
+        } catch (const vpException &e) {
+            std::cout << "Catch exception: " << e.getStringMessage() << std::endl;
+        }
 
-    //     std::cout << "\nProcessing time, Mean: " << vpMath::getMean(times_vec) << " ms ; Median: " << vpMath::getMedian(times_vec) << " ; Std: " << vpMath::getStdev(times_vec) << " ms" << std::endl;
+        std::cout << "\nProcessing time, Mean: " << vpMath::getMean(times_vec) << " ms ; Median: " << vpMath::getMedian(times_vec) << " ; Std: " << vpMath::getStdev(times_vec) << " ms" << std::endl;
 
-    //     vpDisplay::displayText(I_gray, 60, 20, "Click to quit", vpColor::red);
-    //     vpDisplay::flush(I_gray);
-    //     vpDisplay::getClick(I_gray);
+        vpDisplay::displayText(I_gray, 60, 20, "Click to quit", vpColor::red);
+        vpDisplay::flush(I_gray);
+        vpDisplay::getClick(I_gray);
 
     return EXIT_SUCCESS;
 }

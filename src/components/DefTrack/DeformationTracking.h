@@ -74,26 +74,23 @@ using sofa::component::controller::Controller;
 /**
  * This BehaviorModel does nothing but contain a custom data widget.
  */
-class DeformationTracking : public Controller {
+class DeformationTracking : public sofa::component::controller::Controller {
    public:
-    SOFA_CLASS(DeformationTracking, Controller);
+    SOFA_CLASS(DeformationTracking, sofa::component::controller::Controller);
 
-    typedef sofa::type::Vec<3, double> Vec3;
-    typedef sofa::type::Vec<4, double> Vec4;
-
-    void init();
+    virtual void init();
     virtual void reinit();
     void updatePosition(double dt);
     virtual void track();
     virtual void initTracker();
 
     /****Data Variables****/
-    Data<sofa::type::vector<Vec3>> objectModel;
-    Data<sofa::type::vector<Vec3>> mechModel;
-    Data<sofa::type::vector<Vec3>> jacobianUp;
-    Data<sofa::type::vector<Vec3>> jacobianDown;
+    Data<sofa::type::vector<sofa::type::Vec3>> objectModel;
+    Data<sofa::type::vector<sofa::type::Vec3>> mechModel;
+    Data<sofa::type::vector<sofa::type::Vec3>> jacobianUp;
+    Data<sofa::type::vector<sofa::type::Vec3>> jacobianDown;
 
-    Data<sofa::type::vector<Vec4>> forcePoints;
+    Data<sofa::type::vector<sofa::type::Vec4>> forcePoints;
 
     Data<sofa::type::vector<float>> update_tracker;
 
@@ -142,19 +139,19 @@ class DeformationTracking : public Controller {
 
     double current_residual;
 
-    std::vector<Vec3> x_;
-    std::vector<Vec3> _x;
-    std::vector<Vec3> y_;
-    std::vector<Vec3> _y;
-    std::vector<Vec3> z_;
-    std::vector<Vec3> _z;
+    std::vector<sofa::type::Vec3> x_;
+    std::vector<sofa::type::Vec3> _x;
+    std::vector<sofa::type::Vec3> y_;
+    std::vector<sofa::type::Vec3> _y;
+    std::vector<sofa::type::Vec3> z_;
+    std::vector<sofa::type::Vec3> _z;
 
     void incrementPcdCount();
     void matching();
     void matching_static();
     void update();
     void assimilate();
-    void formatList(sofa::type::vector<Vec3> simulationDump, std::vector<std::vector<Vec3>>& unformatted_meshes, bool jacobian_mesh);
+    void formatList(sofa::type::vector<sofa::type::Vec3> simulationDump, std::vector<std::vector<sofa::type::Vec3>>& unformatted_meshes, bool jacobian_mesh);
 };
 
 }  // namespace sofa::component::controller

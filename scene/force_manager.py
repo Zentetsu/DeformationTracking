@@ -4,7 +4,7 @@ Created Date: Thursday, December 5th 2024, 7:17:00 pm
 
 ----
 
-Last Modified: Wed Dec 18 2024
+Last Modified: Sat Feb 01 2025
 
 ----
 HISTORY:
@@ -178,7 +178,14 @@ class ForceManager:
         # print force_resolved[0],force_resolved[1],force_resolved[2]
         return force_resolved
 
-    def jacobian_deform(self, phase: int, node: Sofa.Core.Node, point: int, jacobian_force: float, prev_force: list) -> Sofa.Core.Node:
+    def jacobian_deform(
+        self,
+        phase: int,
+        node: Sofa.Core.Node,
+        point: int,
+        jacobian_force: float,
+        prev_force: list,
+    ) -> Sofa.Core.Node:
         """Apply the jacobian deformation to a point in the Fem_Simulation object.
 
         Args:
@@ -194,7 +201,7 @@ class ForceManager:
         """
         print("FM jacobian_deform")
         force_J = self.phase_splitter(phase, jacobian_force)
-        # print prev_force
+        print(prev_force.value)
         # print(node.Fem_Simulation.getObject(str(point)).forces.value)
 
         node.Fem_Simulation.getObject(str(point)).forces = [
@@ -257,7 +264,7 @@ class ForceManager:
             # print 'J^'
             if phase == 0:
                 tracker.objectModel = ""
-                toggle = 1
+            toggle = 1
         elif toggle == 1:
             # print 'Jv'
             # print 'Jacobian for: '+str(point)+' at phase: '+str(phase)+' :: RESET'
@@ -267,7 +274,13 @@ class ForceManager:
         elif toggle == 2:
             # print 'Jv'
             # print 'Jacobian for: '+str(point)+' at phase: '+str(phase)+' :: RESET'
-            tracker.objectModel = np.vstack((tracker.objectModel.value, [[-100, -100, -100]], node.Fem_Simulation.getChild("Visu").getObject("Visual").position.value))
+            tracker.objectModel = np.vstack(
+                (
+                    tracker.objectModel.value,
+                    [[-100, -100, -100]],
+                    node.Fem_Simulation.getChild("Visu").getObject("Visual").position.value,
+                )
+            )
             # print(np.shape(tracker.objectModel.value))
             # tracker.objectModel = t
             node = self.reset(
@@ -306,12 +319,13 @@ class ForceManager:
         # print 'prev force:'
         print(node.Fem_Simulation.getObject(str(point)).forces.value)
         print(tracker.update_tracker.value)
+        print(prev_force)
 
         node.Fem_Simulation.getObject(str(point)).forces = [
             [
-                tracker.update_tracker[0][0] + prev_force[0][0],
-                tracker.update_tracker[1][0] + prev_force[0][1],
-                tracker.update_tracker[2][0] + prev_force[0][2],
+                tracker.update_tracker[0] + prev_force[0][0],
+                tracker.update_tracker[1] + prev_force[0][1],
+                tracker.update_tracker[2] + prev_force[0][2],
             ]
         ]
         # node.Fem_Simulation.getObject(str(point)).forces = str(tracker.update_tracker[0][0] + prev_force[0][0]) + " " + str(tracker.update_tracker[1][0] + prev_force[0][1]) + " " + str(tracker.update_tracker[2][0] + prev_force[0][2])
@@ -346,7 +360,14 @@ class ForceManager:
         """
         print("FM pack_model")
         tracker.objectModel = ""
-        tracker.objectModel = tracker.objectModel + [[-100, -100, -100]] + node.Fem_Simulation.getChild("Visu").getObject("Visual").position
+        tracker.objectModel = np.vstack(
+            (
+                tracker.objectModel.value,
+                [[-100, -100, -100]],
+                node.Fem_Simulation.getChild("Visu").getObject("Visual").position.value,
+            )
+        )
+        # tracker.objectModel = tracker.objectModel + [[-100, -100, -100]] + node.Fem_Simulation.getChild("Visu").getObject("Visual").position
         rest_velocity, obj_position, obj_normal, mesh_position, prev_force = self.extract_reset_parameters(node, point)
         # print 'prev force while packing:'
         # print prev_force
@@ -370,7 +391,7 @@ class ForceManager:
             if toggle == 3:
                 jacobian_phase = 0
                 node_count = node_count - 1
-            toggle = 0
+                toggle = 0
         elif toggle == 3:
             jacobian_phase = jacobian_phase + 1
             toggle = 0

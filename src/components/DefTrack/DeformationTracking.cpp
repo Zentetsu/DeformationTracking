@@ -27,7 +27,7 @@ DeformationTracking::DeformationTracking()
       iterations(initData(&iterations, "iterations", "Maximum iterations allowed for the minimization")),
       simulationMessage(initData(&simulationMessage, "simulationMessage", "Message from SOFA simulation (front-end) to tracker (back-end)")),
       trackerMessage(initData(&trackerMessage, "trackerMessage", "Message from SOFA tracker (back-end) to simulation (front-end)")) {
-    cout << "C++: " << "DeformationTracking" << endl;
+    cout << "C++: " << "DeformationTracking" << objFileName << endl;
     this->f_listening.setValue(true);
 }
 
@@ -38,7 +38,7 @@ void DeformationTracking::incrementPcdCount() {
     // cout<<"incremented pcd"<<endl;
 }
 
-void DeformationTracking::formatList(sofa::type::vector<Vec3> simulationDump, vector<vector<Vec3>>& unformatted_meshes, bool jacobian_mesh) {
+void DeformationTracking::formatList(sofa::type::vector<sofa::type::Vec3> simulationDump, vector<vector<sofa::type::Vec3>>& unformatted_meshes, bool jacobian_mesh) {
     cout << "C++: " << "formatList" << endl;
     int count = -1;
 
@@ -54,13 +54,13 @@ void DeformationTracking::formatList(sofa::type::vector<Vec3> simulationDump, ve
     }
 
     for (int i = 0; i < simulationDump.size(); i++) {
-        Vec3 v = simulationDump[i];
+        sofa::type::Vec3 v = simulationDump[i];
 
         if (count >= 0) {
             if ((v[0] == -100) && (v[1] = -100) && (v[2] = -100)) {
                 count++;
             } else {
-                Vec3 v_;
+                sofa::type::Vec3 v_;
                 v_[0] = v[0];
                 v_[1] = v[1];
                 v_[2] = v[2];
@@ -107,11 +107,11 @@ void DeformationTracking::matching() {
 
     if (matched_points.size() > 0) {
         trackerMessage.setValue("matched");
-        sofa::type::vector<Vec4> list_values;
+        sofa::type::vector<sofa::type::Vec4> list_values;
 
         for (int i = 0; i < matched_points.size(); i++) {
             cout << "C++: " << matched_points[i].x << "," << matched_points[i].y << "," << matched_points[i].z << "," << indices[i] << endl;
-            Vec4 values;
+            sofa::type::Vec4 values;
             values[0] = indices[i];
             values[1] = matched_points[i].x;
             values[2] = matched_points[i].y;
@@ -128,26 +128,26 @@ void DeformationTracking::matching() {
 void DeformationTracking::matching_static() {
     cout << "C++: " << "matching_static" << endl;
     double t = vpTime::measureTimeMicros();
-    cout << "C++: " << "before loading: ";
+    cout << "before loading: ";
     cout.setf(ios::fixed);
-    cout << "C++: " << setprecision(0) << t << endl;
+    cout << setprecision(0) << t << endl;
     nrm.initialize(frame, transform, rTrack, tracker, configPath.getValue().c_str(), caoModelPath.getValue().c_str(), cMo, pcd_count);
     t = vpTime::measureTimeMicros();
-    cout << "C++: " << "after loading: ";
+    cout << "after loading: ";
     cout.setf(ios::fixed);
-    cout << "C++: " << setprecision(0) << t << endl;
+    cout << setprecision(0) << t << endl;
 
-    sofa::type::vector<Vec4> list_values;
-    Vec4 values;
+    sofa::type::vector<sofa::type::Vec4> list_values;
+    sofa::type::Vec4 values;
     values[0] = 28;
     values[1] = -0.028288;
     values[2] = -0.006f;
     values[3] = 0.142213f;
 
-    // /*values[0] = 252;
-    // values[1] = 0.0f;
-    // values[2] = 20.0f;
-    // values[3] = 0.0f;*/
+    /*values[0] = 252;
+    values[1] = 0.0f;
+    values[2] = 20.0f;
+    values[3] = 0.0f;*/
 
     list_values.push_back(values);
     forcePoints.setValue(list_values);
@@ -157,33 +157,27 @@ void DeformationTracking::matching_static() {
 void DeformationTracking::update() {
     cout << "C++: " << "update" << endl;
     vector<PolygonMesh> formatted_meshes;
-    vector<vector<Vec3>> unformatted_meshes;
+    vector<vector<sofa::type::Vec3>> unformatted_meshes;
     formatList(objectModel.getValue(), unformatted_meshes, true);
-    cout << "C++: " << "debug 1" << endl;
     nrm.format_deformed_polygons(model, unformatted_meshes, formatted_meshes);
-    cout << "C++: " << "debug 2" << endl;
 
     PointCloud<PointXYZ>::Ptr frame_(new pcl::PointCloud<pcl::PointXYZ>);
     copyPointCloud(*frame, *frame_);
-    cout << "C++: " << "debug 3" << endl;
 
     current_residual = jFem.compute_update(frame_, model, formatted_meshes, transform, increment);
 
-    cout << "C++: " << "debug 4" << endl;
     vector<float> v;
     for (int i = 0; i < increment.rows(); i++) {
-        cout << "C++: " << "inc: " << increment(i, 0) << endl;
         v.push_back(increment(i, 0));
     }
     update_tracker.setValue(v);
     trackerMessage.setValue("updated");
     counter++;
-    cout << "C++: " << "debug 5" << endl;
 }
 
 void DeformationTracking::assimilate() {
     cout << "C++: " << "assimilate" << endl;
-    vector<vector<Vec3>> unformatted_meshes;
+    vector<vector<sofa::type::Vec3>> unformatted_meshes;
     formatList(objectModel.getValue(), unformatted_meshes, false);
     nrm.update_polygon(model, unformatted_meshes);
 
@@ -195,9 +189,9 @@ void DeformationTracking::assimilate() {
         incrementPcdCount();
         counter = 0;
         double t = vpTime::measureTimeMicros();
-        cout << "C++: " << "***PCD UPDATE***: ";
+        cout << "***PCD UPDATE***: ";
         cout.setf(ios::fixed);
-        cout << "C++: " << setprecision(0) << t << endl;
+        cout << setprecision(0) << t << endl;
         simulationMessage.setValue("ready");
         trackerMessage.setValue("ready");
     } else {
@@ -216,7 +210,7 @@ void DeformationTracking::assimilate() {
 /********************************************************************************/
 void DeformationTracking::track() {
     cout << "C++: " << "track" << endl;
-    cout << "C++: " << "M: " << simulationMessage.getValue() << "," << trackerMessage.getValue() << endl;
+    // cout<<"M: "<<simulationMessage.getValue()<<","<<trackerMessage.getValue()<<endl;
     jFem.set_iteration(counter);
     if (simulationMessage.getValue() == "ready") {
         matching_static();

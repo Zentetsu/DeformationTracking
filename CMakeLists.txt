@@ -13,21 +13,21 @@ set(SRC_DIR "binding")
 set(HEADER_FILES
     src/initMyPlugin.h
     src/components/MyComponent/MyComponent.h
-    src/components/DeformationTracking/config.h
-    src/components/DeformationTracking/JacobianFEM.h
-    src/components/DeformationTracking/RigidTracking.h
-    src/components/DeformationTracking/OcclusionCheck.h
-    src/components/DeformationTracking/NonRigidMatching.h
-    src/components/DeformationTracking/DeformationTracking.h
+    src/components/DefTrack/config.h
+    src/components/DefTrack/JacobianFEM.h
+    src/components/DefTrack/RigidTracking.h
+    src/components/DefTrack/OcclusionCheck.h
+    src/components/DefTrack/NonRigidMatching.h
+    src/components/DefTrack/DeformationTracking.h
 )
 set(SOURCE_FILES
     src/initMyPlugin.cpp
     src/components/MyComponent/MyComponent.cpp
-    src/components/DeformationTracking/JacobianFEM.cpp
-    src/components/DeformationTracking/RigidTracking.cpp
-    src/components/DeformationTracking/OcclusionCheck.cpp
-    src/components/DeformationTracking/NonRigidMatching.cpp
-    src/components/DeformationTracking/DeformationTracking.cpp
+    src/components/DefTrack/JacobianFEM.cpp
+    src/components/DefTrack/RigidTracking.cpp
+    src/components/DefTrack/OcclusionCheck.cpp
+    src/components/DefTrack/NonRigidMatching.cpp
+    src/components/DefTrack/DeformationTracking.cpp
 )
 
 add_library(${PROJECT_NAME} SHARED ${HEADER_FILES} ${SOURCE_FILES})
