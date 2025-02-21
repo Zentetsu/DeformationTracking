@@ -1,6 +1,6 @@
 include = ["API.toml", "**/*.py", "**/*.py"]
 
-line-length = 250
+line-length = 5000
 select = ["ANN", "D"]
 
 [lint]

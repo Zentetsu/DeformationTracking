@@ -6,31 +6,52 @@ include(cmake/environment.cmake)
 find_package(Sofa.Config REQUIRED)
 sofa_find_package(Sofa.Core REQUIRED)
 sofa_find_package(Sofa.Component.Controller REQUIRED)
-find_package(Sofa.Helper REQUIRED)
+sofa_find_package(Sofa.Simulation.Core REQUIRED)
+sofa_find_package(Sofa.Component.Topology.Container.Grid REQUIRED)
+sofa_find_package(Sofa.Component.SolidMechanics.Spring REQUIRED)
+sofa_find_package(Sofa.Component.SolidMechanics.FEM REQUIRED)
 
+find_package(Sofa.Helper REQUIRED)
+find_package(SofaFramework REQUIRED)
+
+# find_package(SofaBase REQUIRED)
+# find_package(SofaGeneral REQUIRED)
 set(SRC_DIR "binding")
 
 set(HEADER_FILES
     src/initMyPlugin.h
     src/components/MyComponent/MyComponent.h
+    src/components/DefTrack/Sensor.h
     src/components/DefTrack/config.h
     src/components/DefTrack/JacobianFEM.h
     src/components/DefTrack/RigidTracking.h
     src/components/DefTrack/OcclusionCheck.h
     src/components/DefTrack/NonRigidMatching.h
     src/components/DefTrack/DeformationTracking.h
+
+    # src/components/DefTrack/OrthotropicTetrahedralCorotationalFEMForceField.h
 )
 set(SOURCE_FILES
     src/initMyPlugin.cpp
     src/components/MyComponent/MyComponent.cpp
+    src/components/DefTrack/Sensor.cpp
     src/components/DefTrack/JacobianFEM.cpp
     src/components/DefTrack/RigidTracking.cpp
     src/components/DefTrack/OcclusionCheck.cpp
     src/components/DefTrack/NonRigidMatching.cpp
     src/components/DefTrack/DeformationTracking.cpp
+
+    # src/components/DefTrack/OrthotropicTetrahedralCorotationalFEMForceField.cpp
 )
 
 add_library(${PROJECT_NAME} SHARED ${HEADER_FILES} ${SOURCE_FILES})
+
+target_link_libraries(${PROJECT_NAME} Sofa.Component.Controller)
+target_link_libraries(${PROJECT_NAME} Sofa.Component.SolidMechanics.FEM)
+target_link_libraries(${PROJECT_NAME} Sofa.Component.SolidMechanics.Spring)
+target_link_libraries(${PROJECT_NAME} Sofa.Component.Topology.Container.Grid)
+target_link_libraries(${PROJECT_NAME} Sofa.Core)
+target_link_libraries(${PROJECT_NAME} Sofa.Simulation.Core)
 
 find_package(PCL 1.9 REQUIRED COMPONENTS common io search visualization filters segmentation)
 

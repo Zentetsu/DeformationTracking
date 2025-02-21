@@ -19,7 +19,7 @@
  *                                                                             *
  * Contact information: contact@sofa-framework.org                             *
  ******************************************************************************/
-#include "config.h"
+#include <DeformationTracking/config.h>
 
 namespace sofa {
 
@@ -53,7 +53,7 @@ const char* getModuleDescription() { return "Tracks non rigid objects using data
 
 const char* getModuleComponentList() {
     /// string containing the names of the classes provided by the plugin
-    return "DeformationTracking";
+    return "DeformationTracking, OrthotropicTetrahedralCorotationalFEMForceField";
     // return "MyMappingPendulumInPlane, MyBehaviorModel, MyProjectiveConstraintSet";
 }
 
@@ -65,4 +65,5 @@ const char* getModuleComponentList() {
 // SOFA_LINK_CLASS(MyMappingPendulumInPlane)
 // SOFA_LINK_CLASS(MyBehaviorModel)
 // SOFA_LINK_CLASS(MyProjectiveConstraintSet)
-SOFA_LINK_CLASS(DeformationTracking);
+SOFA_LINK_CLASS(DeformationTracking)
+SOFA_LINK_CLASS(OrthotropicTetrahedralCorotationalFEMForceField)

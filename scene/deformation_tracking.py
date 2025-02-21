@@ -1,37 +1,25 @@
-"""
-File: deformation_tracking.py
-Created Date: Thursday, December 5th 2024, 7:17:00 pm
-
-----
-
-Last Modified: Fri Jan 31 2025
-
-----
-HISTORY:
-Date      	By	Comments
-----------	---	---------------------------------------------------------
-"""  # noqa
-
-import Sofa  # type: ignore
+import Sofa
 import sys
 import numpy as np
 import configparser as ConfigParser
 
 import random
 import os
+from shutil import copyfile
 
-path_param = os.getcwd()  #'/home/agniv/Code/sofa/applications/plugins/DeformationTracking/scene/'
+path_param = (
+    os.getcwd()
+)  #'/home/agniv/Code/sofa/applications/plugins/DeformationTracking/scene/'
 sys.path.append(path_param)
 
 import parameters
 import force_manager
+import displacement_manager
 
 
 class SofaDeform(Sofa.Core.Controller):
-    """Controller class for deformation tracking in Sofa."""
-
     count = 0
-    properties_file = path_param + "/parameter_cube5.properties"
+    properties_file = path_param + "/parameter_ball.properties"
     config = ConfigParser.RawConfigParser()
     config.read(properties_file)
     param = parameters.Parameters()
@@ -50,45 +38,35 @@ class SofaDeform(Sofa.Core.Controller):
     mesh_position = 0
     prev_force = 0
     update_stage = 0
+    fixed_points = 0
+    force_map = dict()
+    jacobian_type = 0
+    output_folder_ = ""
+    dt = 0
+    calibration_file = ""
+    done_jacobian_once = 0
+    update_wait_steps = 2
+    max_force_vectors = 0
 
-    def getFemProperties(self) -> tuple:
-        """Retrieve FEM properties from the configuration file.
+    def get_previous_force(self, node, prev_force):
+        if node in self.force_map:
+            return self.force_map[node]
+        else:
+            return prev_force
 
-        Returns:
-            tuple: A tuple containing FEM properties.
+    def set_previous_force(self, node, force):
+        self.force_map[node] = force
 
-        """
-        print("DT getFemProperties")
+    def getFemProperties(self):
         return self.param.femProperties(self.config)
 
-    def getTrackingProperties(self) -> tuple:
-        """Retrieve tracking properties from the configuration file.
-
-        Returns:
-            tuple: A tuple containing tracking properties.
-
-        """
-        print("DT getTrackingProperties")
+    def getTrackingProperties(self):
         return self.param.trackingProperties(self.config)
 
-    def getTrackerMessage(self) -> str:
-        """Retrieve the tracker message.
-
-        Returns:
-            str: The tracker message.
-
-        """
-        print("DT getTrackerMessage")
+    def getTrackerMessage(self):
         return self.tracker.trackerMessage
 
-    def spawnScene(self) -> Sofa.Core.Node:
-        """Create and return the FEM simulation scene.
-
-        Returns:
-            Sofa.Core.Node: The root node of the FEM simulation scene.
-
-        """
-        print("DT spawnScene")
+    def spawnScene(self):
         node = self.rootNode.addChild("Fem_Simulation")
         (
             mechanical_model,
@@ -99,8 +77,10 @@ class SofaDeform(Sofa.Core.Controller):
             young_modulus,
             poisson_ratio,
             fixed_constraint,
-            max_force_vectors,
+            self.max_force_vectors,
             self.jacobian_force,
+            self.jacobian_type,
+            self.update_wait_steps,
         ) = self.getFemProperties()
         node, self.myMechanicalObjectPointer = self.param.createScene(
             node,
@@ -112,49 +92,31 @@ class SofaDeform(Sofa.Core.Controller):
             young_modulus,
             poisson_ratio,
             fixed_constraint,
-            max_force_vectors,
+            self.max_force_vectors,
+            self.jacobian_type,
         )
+        self.fixed_points = fixed_constraint
+        if self.jacobian_type == 1:
+            self.force = displacement_manager.DisplacementManager()
 
         return node
 
-    def onLoaded(self, node: Sofa.Core.Node) -> None:
-        """Handle the event when the scene is loaded.
-
-        Args:
-            node (Sofa.Core.Node): The root node of the scene.
-
-        """
-        print("DT onLoaded")
-        # print("onLoaded")
+    def onLoaded(self, node):
         self.rootNode = node
 
-    def createGraph(self, node: Sofa.Core.Node) -> int:
-        """Create the graph for the scene.
-
-        Args:
-            node (Sofa.Core.Node): The root node of the scene.
-
-        Returns:
-            int: Status code indicating success or failure.
-
-        """
-        print("DT createGraph")
-        # print 'createGraph'
+    def createGraph(self, node):
         node = self.spawnScene()
         node.init()
-        self.prepTracker(node.Response.name.value)
+        self.prepTracker(node)
+        copyfile(
+            self.properties_file,
+            self.tracker.outputDirectory + "/parameter_ball.properties",
+        )
         self.rootNode = node
-        # print 'created graph'
+
         return 0
 
-    def prepTracker(self, node: Sofa.Core.Node) -> None:
-        """Prepare the tracker with the given node.
-
-        Args:
-            node (Sofa.Core.Node): The node to prepare the tracker with.
-
-        """
-        print("DT prepTracker")
+    def prepTracker(self, node):
         (
             visual_model,
             init_transform,
@@ -168,12 +130,29 @@ class SofaDeform(Sofa.Core.Controller):
             config_path,
             cao_model_path,
             iterations,
+            debug_flag,
+            init_lambda,
+            additional_debug_folder,
+            tracker_init_file,
+            color_image_folder,
+            depth_data_folder,
+            data_offset,
+            frequency,
+            color_cx,
+            color_cy,
+            color_fx,
+            color_fy,
+            depth_to_color_extrinsic_file,
+            active_points,
+            self.calibration_file,
         ) = self.getTrackingProperties()
+        self.output_folder_ = output_folder
         self.tracker = node.addObject(
             "DeformationTracking",
             name="deform_tracker",
             objFileName=visual_model,
             mechFileName=mechanical_model,
+            mechModel="",
             transformFileName=init_transform,
             dataFolder=data_folder,
             outputDirectory=output_folder,
@@ -185,113 +164,121 @@ class SofaDeform(Sofa.Core.Controller):
             caoModelPath=cao_model_path,
             objectModel="",
             iterations=iterations,
+            debugFlag=debug_flag,
+            initLambda=init_lambda,
+            additionalDebugFolder=additional_debug_folder,
+            trackerInitFile=tracker_init_file,
+            colorImageFolder=color_image_folder,
+            depthDataFolder=depth_data_folder,
+            dataOffset=data_offset,
+            frequency=frequency,
+            colorC_x=color_cx,
+            colorC_y=color_cy,
+            colorF_x=color_fx,
+            colorF_y=color_fy,
+            depthToColorExtrinsicFile=depth_to_color_extrinsic_file,
+            activePoints=active_points,
+            calibrationFile=self.calibration_file,
+            jacobianForce=self.jacobian_force,
+            fixedPoints=self.fixed_points,
         )
         self.tracker.simulationMessage = "ready"
+        # print(self.jacobian_force)
+        # self.tracker.jacobianForce = self.jacobian_force
+        # self.tracker.fixedPoints = self.fixed_points
 
-    def jacobian_deform(self) -> None:
-        """Handle the Jacobian deformation process."""
-        print("DT jacobian_deform")
-        print(self.tracker.simulationMessage.value)
-        if self.tracker.simulationMessage.value != "applying_J":
-            print("preparing applying force")
-            for i in range(0, len(self.tracker.forcePoints)):
-                node_details = self.tracker.forcePoints[i]
-                print("Node forcepoints", self.tracker.forcePoints[i])
-                self.rootNode = self.force.append_nodes(self.rootNode, node_details[0], self.current_node)
-                self.force_nodes.extend([self.current_node])
-                self.current_node = self.current_node  # + 1
-            self.tracker.simulationMessage.value = "applying_J"
-            self.node_count = len(self.tracker.forcePoints)
-            # print("node count: " + str(self.node_count))
-        elif self.tracker.simulationMessage.value == "applying_J":
-            print("reading force nodes")
-            (
-                self.jacobian_toggle,
-                self.rest_velocity,
-                self.obj_position,
-                self.obj_normal,
-                self.mesh_position,
-                self.prev_force,
-                self.rootNode,
-                self.tracker,
-            ) = self.force.apply_force_J(
-                self.force_nodes[self.node_count - 1],
-                self.rootNode,
-                self.jacobian_phase,
-                self.jacobian_toggle,
-                self.rest_velocity,
-                self.obj_position,
-                self.obj_normal,
-                self.mesh_position,
-                self.prev_force,
-                self.jacobian_force,
-                self.tracker,
-            )
-            self.jacobian_phase, self.node_count, self.jacobian_toggle = self.force.update_force_J_counters(self.jacobian_phase, self.node_count, self.jacobian_toggle)
-            if self.node_count == 0:
-                self.tracker.simulationMessage.value = "jacobian_ready"
+    def extract_previous_node_position(self, point):
+        obj_force = self.rootNode.getObject("myMech").position
 
-    def update(self) -> None:
-        """Update the deformation tracking process."""
-        print("DT update")
-        if self.update_stage == 0:
-            print(self.update_stage)
-            self.tracker.simulationMessage.value = "applying_update"
-            # print 'F^'
-            # print 'from Python: need to update force now'
-            # print self.tracker.update_tracker
-            self.node_count = len(self.tracker.forcePoints)
-            # print 'node count: '+str(self.node_count)
-            self.force.apply_force(
-                self.force_nodes[self.node_count - 1],
-                self.rootNode,
-                self.tracker,
-                self.prev_force,
-            )
-            self.update_stage = 1
-        elif self.update_stage == 1:
-            print(self.update_stage)
-            self.update_stage = 2
-            # print 'Fv'
-        elif self.update_stage == 2:
-            print(self.update_stage)
-            (
-                self.rest_velocity,
-                self.obj_position,
-                self.obj_normal,
-                self.mesh_position,
-                self.prev_force,
-            ) = self.force.pack_model(
-                self.rootNode,
-                self.tracker,
-                self.force_nodes[0],
-                self.rest_velocity,
-                self.obj_position,
-                self.obj_normal,
-                self.mesh_position,
-                self.prev_force,
-            )
-            self.update_stage = 0
-            self.tracker.simulationMessage.value = "update_ready"
-            # print 'Fv'
+        return obj_force[int(point)]
 
-    def onAnimateBeginEvent(self, event: any) -> None:
-        """Handle the event at the beginning of the animation step.
+    def preformat_current_node(self, current_node_local, point):
+        previous_vertex = int(
+            self.rootNode.getObject(str(int(current_node_local))).indices[0][0]
+        )
+        current_vertex = int(point)
+        if previous_vertex == current_vertex:
+            return current_node_local
+        else:
+            for i in range(0, int(self.max_force_vectors)):
+                previous_vertex = int(
+                    self.rootNode.getObject(str(int(i))).indices[0][0]
+                )
+                if previous_vertex == current_vertex:
+                    return int(i)
 
-        Args:
-            event: The event object.
+            return int(current_node_local + 1)
 
-        """
-        print("DT onAnimateBeginEvent")
-        # print("start")
-        # print("Animation step..." + str(self.count))
+    def update(self):
+        num_of_vertices = int(len(self.tracker.forcePoints))
+
+        for i in range(0, num_of_vertices):
+            tracker_point = self.tracker.forcePoints[(i)][0]
+            tracker_node = self.tracker.forcePoints[(i)]
+            tracker_Fx = self.tracker.update_tracker[(3 * i) + 0][0]
+            tracker_Fy = self.tracker.update_tracker[(3 * i) + 1][0]
+            tracker_Fz = self.tracker.update_tracker[(3 * i) + 2][0]
+            if self.update_stage == 0:
+                self.tracker.simulationMessage = "applying_update"
+                node_details = tracker_node
+                self.node_count = len(self.tracker.forcePoints)
+                self.current_node = self.preformat_current_node(
+                    self.current_node, int(node_details[0])
+                )
+                self.rootNode.getObject(str(int(self.current_node))).indices[0][0] = (
+                    int(node_details[0])
+                )
+                self.prev_force = self.extract_previous_node_position(node_details[0])
+                self.current_node = self.current_node
+                self.rootNode = self.force.apply_force(
+                    self.current_node,
+                    tracker_point,
+                    self.rootNode,
+                    self.tracker,
+                    self.prev_force,
+                    (self.count * self.dt),
+                    self.dt,
+                    tracker_Fx,
+                    tracker_Fy,
+                    tracker_Fz,
+                )
+            elif self.update_stage == self.update_wait_steps:
+                (
+                    self.rest_velocity,
+                    self.obj_position,
+                    self.obj_normal,
+                    self.mesh_position,
+                    self.prev_force,
+                ) = self.force.pack_model(
+                    self.rootNode,
+                    self.tracker,
+                    self.current_node,
+                    self.rest_velocity,
+                    self.obj_position,
+                    self.obj_normal,
+                    self.mesh_position,
+                    self.prev_force,
+                )
+                self.tracker = self.force.pack_model_mechanical(
+                    self.rootNode, self.tracker
+                )
+                self.set_previous_force(self.tracker.forcePoints[0][0], self.prev_force)
+                self.update_stage = -1
+                self.tracker.simulationMessage = "update_ready"
+
+        self.update_stage = self.update_stage + 1
+
+    def onBeginAnimationStep(self, dt):
+        self.dt = dt
         self.count = self.count + 1
-        # position = self.myMechanicalObjectPointer.findData('position').value
-        # print("tracker message: " + self.getTrackerMessage().value)
-        if self.getTrackerMessage().value == "matched":
-            self.jacobian_deform()
-        elif self.getTrackerMessage().value == "updated":
-            self.update()
+        if type(self.tracker) is int:
+            if self.count > 10:
+                exit(0)
+        else:
+            if self.getTrackerMessage() == "matched":
+                self.tracker.simulationMessage = "jacobian_ready"
+            elif self.getTrackerMessage() == "updated":
+                self.update()
 
 
 def createScene(rootNode: Sofa.Core.Node) -> None:
@@ -306,10 +293,16 @@ def createScene(rootNode: Sofa.Core.Node) -> None:
     rootNode.dt = 0.1
     rootNode.addObject("RequiredPlugin", name="MultiThreading")
     rootNode.addObject("RequiredPlugin", name="MyPlugin", pluginName="MyPlugin")
-    rootNode.addObject("RequiredPlugin", name="Sofa.Component.Collision.Detection.Algorithm")
-    rootNode.addObject("RequiredPlugin", name="Sofa.Component.Collision.Detection.Intersection")
+    rootNode.addObject(
+        "RequiredPlugin", name="Sofa.Component.Collision.Detection.Algorithm"
+    )
+    rootNode.addObject(
+        "RequiredPlugin", name="Sofa.Component.Collision.Detection.Intersection"
+    )
     rootNode.addObject("RequiredPlugin", name="Sofa.Component.Collision.Geometry")
-    rootNode.addObject("RequiredPlugin", name="Sofa.Component.Collision.Response.Contact")
+    rootNode.addObject(
+        "RequiredPlugin", name="Sofa.Component.Collision.Response.Contact"
+    )
     rootNode.addObject("RequiredPlugin", name="Sofa.Component.Constraint.Projective")
     rootNode.addObject("RequiredPlugin", name="Sofa.Component.IO.Mesh")
     rootNode.addObject("RequiredPlugin", name="Sofa.Component.LinearSolver.Iterative")
@@ -317,9 +310,13 @@ def createScene(rootNode: Sofa.Core.Node) -> None:
     rootNode.addObject("RequiredPlugin", name="Sofa.Component.Mass")
     rootNode.addObject("RequiredPlugin", name="Sofa.Component.MechanicalLoad")
     rootNode.addObject("RequiredPlugin", name="Sofa.Component.ODESolver.Backward")
-    rootNode.addObject("RequiredPlugin", name="Sofa.Component.SolidMechanics.FEM.Elastic")
+    rootNode.addObject(
+        "RequiredPlugin", name="Sofa.Component.SolidMechanics.FEM.Elastic"
+    )
     rootNode.addObject("RequiredPlugin", name="Sofa.Component.StateContainer")
-    rootNode.addObject("RequiredPlugin", name="Sofa.Component.Topology.Container.Dynamic")
+    rootNode.addObject(
+        "RequiredPlugin", name="Sofa.Component.Topology.Container.Dynamic"
+    )
     rootNode.addObject("RequiredPlugin", name="Sofa.GL.Component.Rendering3D")
     rootNode.addObject("RequiredPlugin", name="SofaMiscCollision")
     rootNode.addObject("RequiredPlugin", name="SofaPython", pluginName="SofaPython3")
@@ -334,7 +331,9 @@ def createScene(rootNode: Sofa.Core.Node) -> None:
         alarmDistance=1.5,
         contactDistance=1,
     )
-    rootNode.addObject("CollisionResponse", name="Response", response="PenalityContactForceField")
+    rootNode.addObject(
+        "CollisionResponse", name="Response", response="PenalityContactForceField"
+    )
     rootNode.addObject("CollisionGroup", name="Group")
 
     print("#" * 50)
