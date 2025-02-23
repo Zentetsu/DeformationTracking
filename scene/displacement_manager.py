@@ -21,8 +21,8 @@ class DisplacementManager:
         return node
 
     def extract_previous_force(self, node, point):
-        obj_force = node.getObject("myMech").position
-        return obj_force[node.getObject(str(int(point))).indices[0][0]]
+        obj_force = node.Fem_Simulation.getObject("myMech").position
+        return obj_force[node.Fem_Simulation.getObject(str(int(point))).indices[0]]
 
     def nullify_force(self, node, point, prev_force):
         node.getObject("myMech").position[
@@ -31,15 +31,19 @@ class DisplacementManager:
         return node
 
     def extract_reset_parameters(self, node, point):
-        myMechanicalObjectPointer = node.getChild("Visu").getObject("Visual")
+        myMechanicalObjectPointer = node.Fem_Simulation.getChild("Visu").getObject(
+            "Visual"
+        )
         mesh_pos = myMechanicalObjectPointer.position
         mesh_norm = myMechanicalObjectPointer.normal
-        mech_buff = node.getObject("myMech").position
+        mech_buff = node.Fem_Simulation.getObject("myMech").position
 
-        rest_velocity = node.getObject("myMech").findData("velocity").value
-        obj_position = copy.deepcopy(mesh_pos)
-        obj_normal = copy.deepcopy(mesh_norm)
-        mesh_position = copy.deepcopy(mech_buff)
+        rest_velocity = (
+            node.Fem_Simulation.getObject("myMech").findData("velocity").value
+        )
+        obj_position = copy.deepcopy(mesh_pos.value)
+        obj_normal = copy.deepcopy(mesh_norm.value)
+        mesh_position = copy.deepcopy(mech_buff.value)
 
         prev_force = self.extract_previous_force(node, point)
 
@@ -215,33 +219,21 @@ class DisplacementManager:
     def apply_force(
         self, point, node_index, node, tracker, prev_force, curr_time, dt, F_x, F_y, F_z
     ):
-        node.getObject(str(int(point))).indices = str(int(node_index))
-        node.getObject(str(int(point))).relativeMovements = "true"
-        node.getObject(str(int(point))).movements = (
-            str(prev_force[0])
-            + " "
-            + str(prev_force[1])
-            + " "
-            + str(prev_force[2])
-            + " "
-            + str(F_x + prev_force[0])
-            + " "
-            + str(F_y + prev_force[1])
-            + " "
-            + str(F_z + prev_force[2])
-            + " "
-            + str(F_x + prev_force[0])
-            + " "
-            + str(F_y + prev_force[1])
-            + " "
-            + str(F_z + prev_force[2])
+        # node.Fem_Simulation.getObject(str(int(point))).indices = str(int(node_index))
+        node.Fem_Simulation.getObject(str(int(point))).indices.value = [
+            int(node_index),
+            *node.Fem_Simulation.getObject(str(int(point))).indices.value[1:],
+        ]
+        node.Fem_Simulation.getObject(str(int(point))).relativeMovements = True
+        node.Fem_Simulation.getObject(str(int(point))).movements.value = np.array(
+            [
+                [prev_force[0], prev_force[1], prev_force[2]],
+                [F_x + prev_force[0], F_y + prev_force[1], F_z + prev_force[2]],
+                [F_x + prev_force[0], F_y + prev_force[1], F_z + prev_force[2]],
+            ]
         )
-        node.getObject(str(int(point))).keyTimes = (
-            str(curr_time + (dt))
-            + " "
-            + str(curr_time + (3 * dt))
-            + " "
-            + str(curr_time + (99999999999 * dt))
+        node.Fem_Simulation.getObject(str(int(point))).keyTimes.value = np.array(
+            [curr_time, curr_time + dt["dt"], 99999999999 * dt["dt"]]
         )
 
         return node
@@ -258,10 +250,12 @@ class DisplacementManager:
         prev_force,
     ):
         tracker.objectModel = ""
-        tracker.objectModel = (
-            tracker.objectModel
-            + [[-100, -100, -100]]
-            + node.getChild("Visu").getObject("Visual").position
+        tracker.objectModel = np.vstack(
+            (
+                tracker.objectModel.value,
+                [[-100, -100, -100]],
+                node.Fem_Simulation.getChild("Visu").getObject("Visual").position.value,
+            )
         )
         rest_velocity, obj_position, obj_normal, mesh_position, prev_force = (
             self.extract_reset_parameters(node, point)
@@ -271,8 +265,12 @@ class DisplacementManager:
 
     def pack_model_mechanical(self, node, tracker):
         tracker.mechModel = ""
-        tracker.mechModel = (
-            tracker.mechModel + [[-100, -100, -100]] + node.getObject("myMech").position
+        tracker.mechModel = np.vstack(
+            (
+                tracker.mechModel.value,
+                [[-100, -100, -100]],
+                node.Fem_Simulation.getObject("myMech").position.value,
+            )
         )
 
         return tracker

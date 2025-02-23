@@ -15,6 +15,7 @@ sys.path.append(path_param)
 import parameters
 import force_manager
 import displacement_manager
+import inspect
 
 
 class SofaDeform(Sofa.Core.Controller):
@@ -49,24 +50,66 @@ class SofaDeform(Sofa.Core.Controller):
     max_force_vectors = 0
 
     def get_previous_force(self, node, prev_force):
+        # print(
+        #     "[",
+        #     os.path.basename(inspect.currentframe().f_code.co_filename),
+        #     inspect.currentframe().f_code.co_name,
+        #     inspect.currentframe().f_lineno,
+        #     "]",
+        # )
         if node in self.force_map:
             return self.force_map[node]
         else:
             return prev_force
 
     def set_previous_force(self, node, force):
+        # print(
+        #     "[",
+        #     os.path.basename(inspect.currentframe().f_code.co_filename),
+        #     inspect.currentframe().f_code.co_name,
+        #     inspect.currentframe().f_lineno,
+        #     "]",
+        # )
         self.force_map[node] = force
 
     def getFemProperties(self):
+        # print(
+        #     "[",
+        #     os.path.basename(inspect.currentframe().f_code.co_filename),
+        #     inspect.currentframe().f_code.co_name,
+        #     inspect.currentframe().f_lineno,
+        #     "]",
+        # )
         return self.param.femProperties(self.config)
 
     def getTrackingProperties(self):
+        # print(
+        #     "[",
+        #     os.path.basename(inspect.currentframe().f_code.co_filename),
+        #     inspect.currentframe().f_code.co_name,
+        #     inspect.currentframe().f_lineno,
+        #     "]",
+        # )
         return self.param.trackingProperties(self.config)
 
     def getTrackerMessage(self):
+        # print(
+        #     "[",
+        #     os.path.basename(inspect.currentframe().f_code.co_filename),
+        #     inspect.currentframe().f_code.co_name,
+        #     inspect.currentframe().f_lineno,
+        #     "]",
+        # )
         return self.tracker.trackerMessage
 
     def spawnScene(self):
+        # print(
+        #     "[",
+        #     os.path.basename(inspect.currentframe().f_code.co_filename),
+        #     inspect.currentframe().f_code.co_name,
+        #     inspect.currentframe().f_lineno,
+        #     "]",
+        # )
         node = self.rootNode.addChild("Fem_Simulation")
         (
             mechanical_model,
@@ -102,9 +145,23 @@ class SofaDeform(Sofa.Core.Controller):
         return node
 
     def onLoaded(self, node):
+        # print(
+        #     "[",
+        #     os.path.basename(inspect.currentframe().f_code.co_filename),
+        #     inspect.currentframe().f_code.co_name,
+        #     inspect.currentframe().f_lineno,
+        #     "]",
+        # )
         self.rootNode = node
 
     def createGraph(self, node):
+        # print(
+        #     "[",
+        #     os.path.basename(inspect.currentframe().f_code.co_filename),
+        #     inspect.currentframe().f_code.co_name,
+        #     inspect.currentframe().f_lineno,
+        #     "]",
+        # )
         node = self.spawnScene()
         node.init()
         self.prepTracker(node)
@@ -117,6 +174,13 @@ class SofaDeform(Sofa.Core.Controller):
         return 0
 
     def prepTracker(self, node):
+        # print(
+        #     "[",
+        #     os.path.basename(inspect.currentframe().f_code.co_filename),
+        #     inspect.currentframe().f_code.co_name,
+        #     inspect.currentframe().f_lineno,
+        #     "]",
+        # )
         (
             visual_model,
             init_transform,
@@ -188,13 +252,29 @@ class SofaDeform(Sofa.Core.Controller):
         # self.tracker.fixedPoints = self.fixed_points
 
     def extract_previous_node_position(self, point):
-        obj_force = self.rootNode.getObject("myMech").position
+        # print(
+        #     "[",
+        #     os.path.basename(inspect.currentframe().f_code.co_filename),
+        #     inspect.currentframe().f_code.co_name,
+        #     inspect.currentframe().f_lineno,
+        #     "]",
+        # )
+        obj_force = self.rootNode.Fem_Simulation.getObject("myMech").position
 
         return obj_force[int(point)]
 
     def preformat_current_node(self, current_node_local, point):
+        # print(
+        #     "[",
+        #     os.path.basename(inspect.currentframe().f_code.co_filename),
+        #     inspect.currentframe().f_code.co_name,
+        #     inspect.currentframe().f_lineno,
+        #     "]",
+        # )
         previous_vertex = int(
-            self.rootNode.getObject(str(int(current_node_local))).indices[0][0]
+            self.rootNode.Fem_Simulation.getObject(
+                str(int(current_node_local))
+            ).indices[0]
         )
         current_vertex = int(point)
         if previous_vertex == current_vertex:
@@ -202,7 +282,7 @@ class SofaDeform(Sofa.Core.Controller):
         else:
             for i in range(0, int(self.max_force_vectors)):
                 previous_vertex = int(
-                    self.rootNode.getObject(str(int(i))).indices[0][0]
+                    self.rootNode.Fem_Simulation.getObject(str(int(i))).indices[0]
                 )
                 if previous_vertex == current_vertex:
                     return int(i)
@@ -210,14 +290,21 @@ class SofaDeform(Sofa.Core.Controller):
             return int(current_node_local + 1)
 
     def update(self):
+        # print(
+        #     "[",
+        #     os.path.basename(inspect.currentframe().f_code.co_filename),
+        #     inspect.currentframe().f_code.co_name,
+        #     inspect.currentframe().f_lineno,
+        #     "]",
+        # )
         num_of_vertices = int(len(self.tracker.forcePoints))
 
         for i in range(0, num_of_vertices):
             tracker_point = self.tracker.forcePoints[(i)][0]
             tracker_node = self.tracker.forcePoints[(i)]
-            tracker_Fx = self.tracker.update_tracker[(3 * i) + 0][0]
-            tracker_Fy = self.tracker.update_tracker[(3 * i) + 1][0]
-            tracker_Fz = self.tracker.update_tracker[(3 * i) + 2][0]
+            tracker_Fx = self.tracker.update_tracker[(3 * i) + 0]  # [0]
+            tracker_Fy = self.tracker.update_tracker[(3 * i) + 1]  # [0]
+            tracker_Fz = self.tracker.update_tracker[(3 * i) + 2]  # [0]
             if self.update_stage == 0:
                 self.tracker.simulationMessage = "applying_update"
                 node_details = tracker_node
@@ -225,9 +312,15 @@ class SofaDeform(Sofa.Core.Controller):
                 self.current_node = self.preformat_current_node(
                     self.current_node, int(node_details[0])
                 )
-                self.rootNode.getObject(str(int(self.current_node))).indices[0][0] = (
-                    int(node_details[0])
-                )
+
+                self.rootNode.Fem_Simulation.getObject(
+                    str(int(self.current_node))
+                ).indices.value = [
+                    int(node_details[0]),
+                    *self.rootNode.Fem_Simulation.getObject(
+                        str(int(self.current_node))
+                    ).indices.value[1:],
+                ]
                 self.prev_force = self.extract_previous_node_position(node_details[0])
                 self.current_node = self.current_node
                 self.rootNode = self.force.apply_force(
@@ -236,7 +329,7 @@ class SofaDeform(Sofa.Core.Controller):
                     self.rootNode,
                     self.tracker,
                     self.prev_force,
-                    (self.count * self.dt),
+                    (self.count * self.dt["dt"]),
                     self.dt,
                     tracker_Fx,
                     tracker_Fy,
@@ -268,16 +361,23 @@ class SofaDeform(Sofa.Core.Controller):
 
         self.update_stage = self.update_stage + 1
 
-    def onBeginAnimationStep(self, dt):
+    def onAnimateBeginEvent(self, dt):
+        # print(
+        #     "[",
+        #     os.path.basename(inspect.currentframe().f_code.co_filename),
+        #     inspect.currentframe().f_code.co_name,
+        #     inspect.currentframe().f_lineno,
+        #     "]",
+        # )
         self.dt = dt
         self.count = self.count + 1
         if type(self.tracker) is int:
             if self.count > 10:
                 exit(0)
         else:
-            if self.getTrackerMessage() == "matched":
+            if self.getTrackerMessage().value == "matched":
                 self.tracker.simulationMessage = "jacobian_ready"
-            elif self.getTrackerMessage() == "updated":
+            elif self.getTrackerMessage().value == "updated":
                 self.update()
 
 
@@ -288,7 +388,13 @@ def createScene(rootNode: Sofa.Core.Node) -> None:
         rootNode (Sofa.Core.Node): The root node of the scene.
 
     """
-    print("DT createScene")
+    # print(
+    #     "[",
+    #     os.path.basename(inspect.currentframe().f_code.co_filename),
+    #     inspect.currentframe().f_code.co_name,
+    #     inspect.currentframe().f_lineno,
+    #     "]",
+    # )
     rootNode.gravity = [0, 0, 0]
     rootNode.dt = 0.1
     rootNode.addObject("RequiredPlugin", name="MultiThreading")
@@ -342,7 +448,6 @@ def createScene(rootNode: Sofa.Core.Node) -> None:
     deform.onLoaded(rootNode)
     deform.spawnScene()
     deform.prepTracker(rootNode)
-    print(rootNode.Fem_Simulation.name.value)
     print("#" * 50)
 
     # print(deform.getFemProperties(), deform.properties_file)
